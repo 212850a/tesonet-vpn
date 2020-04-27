@@ -1,0 +1,32 @@
+---
+    - name: Install nginx
+      apt:
+        name: 
+          - nginx
+        state: present
+    - name: Make sure NGINX is started now and at boot
+      service: name=nginx state=started enabled=yes
+    - name: Install certbot and python-certbot-nginx (to request certificate from letsencrypt.org)
+      apt: 
+        name:
+          - certbot
+          - python-certbot-nginx
+        state: present
+    - name: Request and install letsencrypt certificate
+      shell: certbot run --nginx -d {{ domain_name }} --agree-tos --register-unsafely-without-email -n
+      args:
+        creates: /etc/letsencrypt/live/{{ domain_name }}
+      notify: restart nginx
+    - name: Install php-fpm
+      apt:
+        name:
+          - php-fpm
+        state: present
+    - name: Update NGINX default host configuration
+      template:
+        src: "templates/default.j2"
+        dest: "/etc/nginx/sites-available/default"
+        owner: root
+        group: root
+        mode: 644
+      notify: restart nginx
