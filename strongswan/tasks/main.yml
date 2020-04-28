@@ -1,0 +1,82 @@
+---
+# tasks file for strongswan
+- name: Install strongswan and strongswan-swanctl (for vici)
+  apt:
+    name:
+      - strongswan
+      - strongswan-swanctl
+    state: present
+
+- name: Copy letsencrypt certificate to /etc/ipsec.d/certs
+  copy:
+    remote_src: true
+    src: /etc/letsencrypt/live/{{ domain_name }}/cert.pem
+    dest: /etc/ipsec.d/certs
+    mode: 0644
+
+- name: Copy letsencrypt private key to /etc/ipsec.d/private
+  copy:
+    remote_src: true
+    src: /etc/letsencrypt/live/{{ domain_name }}/privkey.pem
+    dest: /etc/ipsec.d/private
+    mode: 0644
+
+- name: Copy letsencrypt CA chain to /etc/ipsec.d/cacerts
+  copy:
+    remote_src: true
+    src: /etc/letsencrypt/live/{{ domain_name }}/chain.pem
+    dest: /etc/ipsec.d/cacerts
+    mode: 0644
+
+- name: Copy ipsec.conf configuration file using a template
+  template:
+    src: templates/ipsec.conf.j2
+    dest: /etc/ipsec.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Copy ipsec.secret file
+  copy:
+    src: files/ipsec.secrets
+    dest: /etc/ipsec.secrets
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Copy charon configuration file
+  copy: 
+    src: files/charon.conf
+    dest: /etc/strongswan.d/charon.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Copy vici pluging configuration file
+  copy: 
+    src: files/vici.conf
+    dest: /etc/strongswan.d/charon/vici.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Copy swanctl configuration file
+  copy: 
+    src: files/swanctl.conf
+    dest: /etc/strongswan.d/swanctl.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart strongswan
+
+- name: Enable packet forwarding for IPv4
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: yes
+
+- name: Enable packet forwarding for IPv6
+  sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: '1'
+    sysctl_set: yes

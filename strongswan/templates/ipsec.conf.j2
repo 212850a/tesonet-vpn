@@ -1,0 +1,21 @@
+config setup
+conn %default
+	ike=aes128gcm16-prfsha256-ecp256
+	esp=aes128gcm16-ecp256
+	
+	keyexchange=ikev2
+	auto=add
+	rekey=no
+	reauth=no
+	fragmentation=yes
+
+	leftsubnet=0.0.0.0/0
+	eap_identity=%identity
+	rightsourceip=10.0.1.0/24
+	rightdns=8.8.8.8
+# ike2-mschapv2 clients
+conn ikev2-mschapv2-dns
+	rightauth=eap-mschapv2
+	leftid={{ domain_name }}
+	leftcert=cert.pem
+	leftsendcert=always
