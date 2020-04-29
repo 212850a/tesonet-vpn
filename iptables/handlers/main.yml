@@ -1,2 +1,7 @@
 ---
 # handlers file for iptables
+- name: iptables-restore
+  shell: iptables-restore < /etc/iptables/rules.v4
+
+- name: iptables-save
+  shell: iptables-save > /etc/iptables/rules.v4

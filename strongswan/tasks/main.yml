@@ -5,6 +5,7 @@
     name:
       - strongswan
       - strongswan-swanctl
+      - libcharon-extra-plugins
     state: present
 
 - name: Copy letsencrypt certificate to /etc/ipsec.d/certs

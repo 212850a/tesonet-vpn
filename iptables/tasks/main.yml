@@ -1,2 +1,13 @@
 ---
 # tasks file for iptables
+- name: Install iptables-persistent
+  apt: 
+    name: 
+      - iptables-persistent
+    state: present
+
+- name: Set up iptables rules
+  copy: src=iptables-save dest=/etc/iptables/rules.v4
+  notify: 
+    - iptables-restore
+    - iptables-save
