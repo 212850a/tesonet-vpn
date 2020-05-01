@@ -15,10 +15,15 @@ Before to run playbook the following variables should be defined inside inventor
 - virtual_ip6_range
 - php_fpm_socket_name (to be ready for different versions of php_fpm)
 
-It can be done via `/etc/ansible/host`:
+It can be done via `/etc/ansible/host` or in vars for specific role:
 ```
+cat /etc/ansible/host
 [linode]
 172.105.80.243 domain_name=li2041-243.members.linode.com php_fpm_socket_name=php7.3-fpm.sock
+
+cat ~/# cat strongswan/vars/main.yml
+virtual_ip4_range: 10.0.1.0/24
+virtual_ip6_range: 2001:db8::/96
 ```
 
 For the second (ip-based) VPN connection certificate for local CA has to be generated first. strongswan-pki package has to be installed if you want to use `ipsec pki` command for it. As example:
@@ -27,7 +32,7 @@ ipsec pki --gen --type rsa --size 4096 --outform pem > /etc/ipsec.d/private/cake
 
 ipsec pki --self --ca --lifetime 3650 --in /etc/ipsec.d/private/cakey.pem --type rsa --dn "CN=VPN root CA" --outform pem > /etc/ipsec.d/certs/cacert.pem
 ```
-CA certificate then has to be added to trusted for VPN clients, otherwise ip-based certificate won't be accepted.
+CA certificate then has to be added to trusted on VPN client's side, otherwise ip-based certificate won't be accepted.
 Certificate for ip-based VPN communication has to be signed off by CA-certificate. As example:
 ```
 ipsec pki --gen --type rsa --size 4096 --outform pem > /etc/ipsec.d/private/privkeyip.pem
@@ -35,13 +40,14 @@ ipsec pki --gen --type rsa --size 4096 --outform pem > /etc/ipsec.d/private/priv
 ipsec pki --pub --in /etc/ipsec.d/private/privkeyip.pem --type rsa | ipsec pki --issue --lifetime 1825 --cacert /etc/ipsec.d/certs/cacert.pem --cakey /etc/ipsec.d/private/cakey.pem --dn "CN=172.105.80.243" --san "172.105.80.243" --flag serverAuth --flag ikeIntermediate --outform pem > /etc/ipsec.d/certs/certip.pem
 ```
 strongswan role has already generated key and certificate included for ip-based VPN connection.
-Everything was tested on Ubuntu 18.04 and Debian 10.
+
+Everything was tested on Ubuntu 18.04 (AWS, IPv4 only) and Debian 10.3 (IPv4+IPv6)
 
 ## Roles
 ### nginx
 - Install nginx
-- Get Let’s encrypt certificate, for that we need to have nginx installed
-- Install php5-fpm with a webpage displaying currently connected strongSwan clients and their respective IP addresses (vici interface is used).
+- Get Let’s encrypt certificate, for that we need to have nginx already installed
+- Install php5-fpm with a webpage displaying currently connected strongSwan clients and their respective IP addresses (vici interface is used). Until strongSwan packages are installed it will show nothing.
 
 ### strongSwan
 -   Install strongSwan, swanctl (for vici interface), plugins and strongswan-pki
@@ -57,7 +63,9 @@ Everything was tested on Ubuntu 18.04 and Debian 10.
 
 ### iptables
 - To deny local clients (connected to the server) to "see" each other the following drop rule was created as first one for FORWARD
-``` -A FORWARD -s virtual_ip_range -d virtual_ip_range -j DROP ```		
+```
+-A FORWARD -s virtual_ip_range -d virtual_ip_range -j DROP`	
+```	
 - As per requirements to secure VPN server only required INPUT and FORWARD traffic is allowed, everything else is DROP'ed. Additionally ssh for root should be closed and some local account should be created instead.
 
 ## Status
@@ -94,7 +102,9 @@ ikev2-mschapv2-dns: #6, ESTABLISHED, IKEv2, 1cfbf9aa16084b5d_i 40114e057872fa0b_
 Until router-advertisement icmpv6-type INPUT rule was added to ip6tables default gateway for ipv6 disappeared from route table. 
 ### AWS EC2 instances are behind NAT
 If AWS EC2 is planned to be used as strongSwan VPN server you have to remember that EC2 instances are already located behind NAT, so instead of MASQUERADE SNAT POSTROUTING rule should be used. As example:
-`iptables -t nat -A POSTROUTING -s 10.0.1.0/24 -o eth0 -j SNAT --to-source 172.31.47.2`
+```
+iptables -t nat -A POSTROUTING -s 10.0.1.0/24 -o eth0 -j SNAT --to-source 172.31.47.2
+```
 where 172.31.47.2 is internal ip-address of EC2 instance
 
 
