@@ -8,7 +8,6 @@ conn %default
 	reauth=no
 	fragmentation=yes
 	leftsubnet=0.0.0.0/0,::/0
-	leftcert=cert.pem
 	leftsendcert=always
 	# ask the client for user credentials
 	eap_identity=%identity
@@ -17,5 +16,12 @@ conn %default
 	rightauth=eap-mschapv2
 # ike2-mschapv2 clients
 conn ikev2-mschapv2-dns
-	rightsourceip={{ virtual_ip4_range }},{{ virtual_ip6_range }}
+	leftcert=cert.pem
+	leftsubnet=0.0.0.0/0
+	rightsourceip={{ virtual_ip4_range }}
 	leftid={{ domain_name }}
+conn ikev2-mschapv2-ip
+	leftcert={{ ansible_eth0.ipv4.address }}
+	leftsubnet=0.0.0.0/0,::/0
+	rightsourceip={{ virtual_ip4_range }},{{ virtual_ip6_range }}
+	leftid={{ ansible_eth0.ipv4.address }}

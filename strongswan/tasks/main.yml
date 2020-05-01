@@ -5,6 +5,7 @@
     name:
       - strongswan
       - strongswan-swanctl
+      - strongswan-pki
       - libcharon-extra-plugins
     state: present
 
@@ -20,13 +21,25 @@
     remote_src: true
     src: /etc/letsencrypt/live/{{ domain_name }}/privkey.pem
     dest: /etc/ipsec.d/private
-    mode: 0644
+    mode: 0600
 
 - name: Copy letsencrypt CA chain to /etc/ipsec.d/cacerts
   copy:
     remote_src: true
     src: /etc/letsencrypt/live/{{ domain_name }}/chain.pem
     dest: /etc/ipsec.d/cacerts
+    mode: 0644
+
+- name: Copy ip-based key to /etc/ipsec.d/private
+  copy:
+    src: privkeyip.pem
+    dest: /etc/ipsec.d/private
+    mode: 0600
+
+- name: Copy ip-based certificate to /etc/ipsec.d/certs
+  copy:
+    src: certip.pem
+    dest: /etc/ipsec.d/certs
     mode: 0644
 
 - name: Copy ipsec.conf configuration file using a template
