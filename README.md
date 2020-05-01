@@ -13,6 +13,13 @@ Before to run playbook the following variables should be defined inside inventor
 - domain_name
 - virtual_ip4_range
 - virtual_ip6_range
+- php_fpm_socket_name (to be ready for different versions of php_fpm)
+
+It can be done via `/etc/ansible/host`:
+```
+[linode]
+172.105.80.243 domain_name=li2041-243.members.linode.com php_fpm_socket_name=php7.3-fpm.sock
+```
 
 For the second (ip-based) VPN connection certificate for local CA has to be generated first. strongswan-pki package has to be installed if you want to use `ipsec pki` command for it. As example:
 ```
@@ -46,15 +53,50 @@ Everything was tested on Ubuntu 18.04 and Debian 10.
 	ike=aes128gcm16-prfsha256-ecp256
 	esp=aes128gcm16-ecp256
 	```
+- Enable IPv4 and IPv6 packet forwarding
 
 ### iptables
 - To deny local clients (connected to the server) to "see" each other the following drop rule was created as first one for FORWARD
 ``` -A FORWARD -s virtual_ip_range -d virtual_ip_range -j DROP ```		
-- As per requirements to secure VPN server only required INPUT and FORWARD traffic is allowed, everything else is DROP'ed
+- As per requirements to secure VPN server only required INPUT and FORWARD traffic is allowed, everything else is DROP'ed. Additionally ssh for root should be closed and some local account should be created instead.
+
+## Status
+Status page example with two clients connected on different connections (ikev2-mschapv2-ip and ikev2-mschapv2-dns)
+```
+IKE_SAs: 2 total, 0 half-open
+
+ikev2-mschapv2-ip: #7, ESTABLISHED, IKEv2, f857c78f7de69769_i 0e52b55f420fcca1_r*
+  local  '172.105.80.243' @ 172.105.80.243[4500]
+  remote '192.168.0.113' @ 77.77.77.77[4500] EAP: 'BruceLee' [10.0.1.1 2001:db8::1]
+  AES_CBC-256/HMAC_SHA2_256_128/PRF_HMAC_SHA2_256/MODP_2048
+  established 2s ago
+  ikev2-mschapv2-ip: #6, reqid 6, INSTALLED, TUNNEL-in-UDP, ESP:AES_CBC-256/HMAC_SHA2_256_128
+    installed 2s ago
+    in  c8195d9f,  11996 bytes,   100 packets,     0s ago
+    out 01646347,  29730 bytes,    84 packets,     0s ago
+    local  0.0.0.0/0 ::/0
+    remote 10.0.1.1/32 2001:db8::1/128
+ikev2-mschapv2-dns: #6, ESTABLISHED, IKEv2, 1cfbf9aa16084b5d_i 40114e057872fa0b_r*
+  local  'li2041-243.members.linode.com' @ 172.105.80.243[4500]
+  remote '192.168.0.128' @ 77.77.77.77[1029] EAP: 'ChuckNorris' [10.0.1.2]
+  AES_CBC-256/HMAC_SHA2_256_128/PRF_HMAC_SHA2_256/MODP_2048
+  established 33s ago
+  ikev2-mschapv2-dns: #5, reqid 5, INSTALLED, TUNNEL-in-UDP, ESP:AES_CBC-256/HMAC_SHA2_256_128
+    installed 33s ago
+    in  c2935cb9,  24453 bytes,   152 packets,     6s ago
+    out 0220effc,  54480 bytes,   125 packets,     6s ago
+    local  0.0.0.0/0
+    remote 10.0.1.2/32
+```
 
 ## Issues
 ### Default gateway for ipv6
 Until router-advertisement icmpv6-type INPUT rule was added to ip6tables default gateway for ipv6 disappeared from route table. 
+### AWS EC2 instances are behind NAT
+If AWS EC2 is planned to be used as strongSwan VPN server you have to remember that EC2 instances are already located behind NAT, so instead of MASQUERADE SNAT POSTROUTING rule should be used. As example:
+`iptables -t nat -A POSTROUTING -s 10.0.1.0/24 -o eth0 -j SNAT --to-source 172.31.47.2`
+where 172.31.47.2 is internal ip-address of EC2 instance
+
 
 ## External Links
 - [strongSwan IKEv2 server configuration](https://www.cl.cam.ac.uk/~mas90/resources/strongswan/)
