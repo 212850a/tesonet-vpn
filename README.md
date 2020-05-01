@@ -59,6 +59,11 @@ Everything was tested on Ubuntu 18.04 (AWS, IPv4 only) and Debian 10.3 (IPv4+IPv
 	ike=aes128gcm16-prfsha256-ecp256
 	esp=aes128gcm16-ecp256
 	```
+- To allow nginx to have access to vici socket in charon.conf the following is added:
+```
+# Name of the group the daemon changes to after startup.
+group = www-data
+```
 - Enable IPv4 and IPv6 packet forwarding
 
 ### iptables
