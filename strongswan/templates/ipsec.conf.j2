@@ -17,5 +17,5 @@ conn %default
 	rightauth=eap-mschapv2
 # ike2-mschapv2 clients
 conn ikev2-mschapv2-dns
-	rightsourceip=10.0.1.0/24,2001:db8::/96
+	rightsourceip={{ virtual_ip4_range }},{{ virtual_ip6_range }}
 	leftid={{ domain_name }}

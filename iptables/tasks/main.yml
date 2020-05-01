@@ -7,11 +7,11 @@
     state: present
 
 - name: Set up iptables rules
-  copy: src=rules.v4 dest=/etc/iptables/rules.v4
+  template: src=rules.v4.j2 dest=/etc/iptables/rules.v4
   notify: 
     - iptables-restore
 
 - name: Set up ip6tables rules
-  copy: src=rules.v6 dest=/etc/iptables/rules.v6
+  template: src=rules.v6.j2 dest=/etc/iptables/rules.v6
   notify: 
     - ip6tables-restore

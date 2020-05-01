@@ -1,2 +1,4 @@
 ---
 # vars file for iptables
+virtual_ip4_range: 10.0.1.0/24
+virtual_ip6_range: 2001:db8::/96

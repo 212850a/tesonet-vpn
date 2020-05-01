@@ -1,0 +1,21 @@
+*filter
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -p udp -m udp --dport 500 -j ACCEPT
+-A INPUT -p udp -m udp --dport 4500 -j ACCEPT
+-A INPUT -p icmpv6 --icmpv6-type router-advertisement -j ACCEPT
+-A INPUT -p icmpv6 --icmpv6-type neighbor-solicitation -j ACCEPT
+-A INPUT -p icmpv6 --icmpv6-type neighbor-advertisement -j ACCEPT
+-A INPUT -j DROP
+-A FORWARD -s {{ virtual_ip6_range }} -d {{ virtual_ip6_range }} -j DROP
+-A FORWARD -s {{ virtual_ip6_range }} -m policy --dir in --pol ipsec --proto esp -j ACCEPT
+-A FORWARD -d {{ virtual_ip6_range }}  -m policy --dir out --pol ipsec --proto esp -j ACCEPT
+-A FORWARD -j DROP
+COMMIT
+*nat
+-A POSTROUTING -s {{ virtual_ip6_range }}  -o eth0 -m policy --dir out --pol ipsec -j ACCEPT
+-A POSTROUTING -s {{ virtual_ip6_range }}  -o eth0 -j MASQUERADE
+COMMIT
